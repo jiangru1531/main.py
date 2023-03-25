@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import QApplication, QLabel, QVBoxLayout, QWidget, QPushBut
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
-'''我更新了这个项目你能看见吗'''
+'''我更新了吗这个项目你能看见'''
 
 # 创建GUI界面
 class MainWindow(QWidget):
