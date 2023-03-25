@@ -6,7 +6,7 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
 '''我更新了吗这个项目你能看见'''
-
+'''跟新测试看这里'''
 # 创建GUI界面
 class MainWindow(QWidget):
     def __init__(self):
