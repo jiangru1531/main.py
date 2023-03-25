@@ -10,6 +10,9 @@ import matplotlib.pyplot as plt
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 
+from QCandyUi.CandyWindow import colorful
+
+
 
 class FeatureExtractor:
     def __init__(self, file_path):
@@ -34,6 +37,7 @@ class OscilloscopeWindow(QWidget):
         self.ax.plot(data)
         self.canvas.draw()
 
+@colorful('blueDeep')
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -41,7 +45,7 @@ class MainWindow(QMainWindow):
 
         self.setWindowTitle("特征提取工具")
         self.setWindowIcon(QIcon("icon.png"))
-        self.resize(800, 600)
+        self.resize(1920, 1080)
 
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
