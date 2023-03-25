@@ -1,199 +1,113 @@
-import os
-import pandas as pd
-import matplotlib.pyplot as plt
-from PyQt5.QtWidgets import QApplication, QLabel, QVBoxLayout, QWidget, QPushButton, QFileDialog
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.figure import Figure
+from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
+                             QHBoxLayout, QFileDialog, QLabel, QPushButton,
+                             QComboBox)
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QIcon
 
-'''我更新了吗这个项目你能看见'''
-'''跟新测试看这里'''
-# 创建GUI界面
-class MainWindow(QWidget):
-    def __init__(self):
-        super().__init__()
-        self.setWindowTitle('Excel Analyzer')
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+
+
+class FeatureExtractor:
+    def __init__(self, file_path):
+        self.file_path = file_path
+        self.data = pd.read_excel(file_path)
+
+    def mean(self):
+        return np.mean(self.data, axis=0)
+
+
+class OscilloscopeWindow(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.fig, self.ax = plt.subplots()
+        self.canvas = FigureCanvas(self.fig)
         self.layout = QVBoxLayout()
+        self.layout.addWidget(self.canvas)
         self.setLayout(self.layout)
 
-        # 添加路径选择按钮
-        self.btn_choose = QPushButton('选择文件')
-        self.layout.addWidget(self.btn_choose)
-        self.btn_choose.clicked.connect(self.choose_file)
+    def plot(self, data):
+        self.ax.clear()
+        self.ax.plot(data)
+        self.canvas.draw()
 
-        # 添加波形显示界面
-        self.fig = Figure(figsize=(5, 4), dpi=100)
-        self.canvas = FigureCanvas(self.fig)
-        self.ax = self.fig.add_subplot(111)
-        self.layout.addWidget(self.canvas)
+
+class MainWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+
+        self.setWindowTitle("特征提取工具")
+        self.setWindowIcon(QIcon("icon.png"))
+        self.resize(800, 600)
+
+        central_widget = QWidget()
+        self.setCentralWidget(central_widget)
+
+        main_layout = QVBoxLayout()
+
+        # 添加文件选择框
+        file_layout = QHBoxLayout()
+        self.file_path1 = QLabel()
+        self.file_path2 = QLabel()
+        self.file_path3 = QLabel()
+        file_layout.addWidget(QLabel("文件1："))
+        file_layout.addWidget(self.file_path1)
+        file_layout.addWidget(QLabel("文件2："))
+        file_layout.addWidget(self.file_path2)
+        file_layout.addWidget(QLabel("文件3："))
+        file_layout.addWidget(self.file_path3)
+        select_file_btn = QPushButton("选择文件")
+        select_file_btn.clicked.connect(self.select_file)
+        file_layout.addWidget(select_file_btn)
+        main_layout.addLayout(file_layout)
+
+        # 添加示波器窗口
+        osc_layout = QHBoxLayout()
+        self.osc1 = OscilloscopeWindow()
+        self.osc2 = OscilloscopeWindow()
+        self.osc3 = OscilloscopeWindow()
+        self.osc4 = OscilloscopeWindow()
+        osc_layout.addWidget(self.osc1)
+        osc_layout.addWidget(self.osc2)
+        osc_layout.addWidget(self.osc3)
+        osc_layout.addWidget(self.osc4)
+        main_layout.addLayout(osc_layout)
 
         # 添加特征提取按钮
-        self.btn_mean = QPushButton('提取均值')
-        self.btn_std = QPushButton('提取标准差')
-        self.btn_max = QPushButton('提取峰值')
-        self.btn_min = QPushButton('提取最小值')
-        self.btn_max_min = QPushButton('提取峰峰值')
-        self.btn_absolute_mean_value = QPushButton('提取绝对均值')
-        self.btn_standard_deviation = QPushButton('提取标准差')
-        self.btn_root_mean_score = QPushButton('提取均方根值')
-        self.btn_Root_amplitude = QPushButton('提取方根幅值')
-        self.btn_skewness_value = QPushButton('提取偏态指标')
-        self.btn_Kurtosis_value = QPushButton('提取峭度指标')
-        self.btn_shape_factor = QPushButton('提取波形因子')
-        self.btn_crest_factor = QPushButton('提取峰值因子')
-        self.btn_pulse_factor = QPushButton('提取脉冲因子')
-        self.btn_clearance_factor = QPushButton('提取裕度因子')
+        extract_layout = QHBoxLayout()
+        extract_layout.addWidget(QLabel("选择文件："))
+        self.file_combo_box = QComboBox()
+        extract_layout.addWidget(self.file_combo_box)
+        extract_btn = QPushButton("提取特征")
+        extract_btn.clicked.connect(self.extract_feature)
+        extract_layout.addWidget(extract_btn)
+        main_layout.addLayout(extract_layout)
 
-        self.layout.addWidget(self.btn_mean)
-        self.layout.addWidget(self.btn_std)
-        self.layout.addWidget(self.btn_max)
-        self.layout.addWidget(self.btn_min)
-        self.layout.addWidget(self.btn_max_min)
-        self.layout.addWidget(self.btn_absolute_mean_value)
-        self.layout.addWidget(self.btn_standard_deviation)
-        self.layout.addWidget(self.btn_root_mean_score)
-        self.layout.addWidget(self.btn_Root_amplitude)
-        self.layout.addWidget(self.btn_skewness_value)
-        self.layout.addWidget(self.btn_Kurtosis_value)
-        self.layout.addWidget(self.btn_shape_factor)
-        self.layout.addWidget(self.btn_crest_factor)
-        self.layout.addWidget(self.btn_pulse_factor)
-        self.layout.addWidget(self.btn_clearance_factor)
+        central_widget.setLayout(main_layout)
 
-        self.btn_mean.clicked.connect(self.extract_mean)
-        self.btn_std.clicked.connect(self.extract_std)
-        self.btn_max.clicked.connect(self.extract_max)
-        self.btn_min.clicked.connect(self.extract_min)
-        self.btn_max_min.clicked.connect(self.extract_max_min)
-        self.btn_absolute_mean_value.clicked.connect(self.extract_absolute_mean_value)
-        self.btn_standard_deviation.clicked.connect(self.extract_standard_deviation)
-        self.btn_root_mean_score.clicked.connect(self.extract_root_mean_score)
-        self.btn_Root_amplitude.clicked.connect(self.extract_Root_amplitude)
-        self.btn_skewness_value.clicked.connect(self.extract_skewness_value)
-        self.btn_Kurtosis_value.clicked.connect(self.extract_Kurtosis_value)
-        self.btn_shape_factor.clicked.connect(self.extract_shape_factor)
-        self.btn_crest_factor.clicked.connect(self.extract_crest_factor)
-        self.btn_pulse_factor.clicked.connect(self.extract_pulse_factor)
-        self.btn_clearance_factor.clicked.connect(self.extract_clearance_factor)
+    def select_file(self):
+        file_path, _ = QFileDialog.getOpenFileName(
+            parent=self,
+            caption="选择文件",
+            filter="Excel 文件 (*.xlsx *.xls)"
+        )
+        if file_path:
+            if not self.file_path1.text():
+                self.file_path1.setText(file_path)
+            elif not self.file_path2.text():
+                self.file_path2.setText(file_path)
+            elif not self.file_path3.text():
+                self.file_path3.setText(file_path)
 
-    # 打开文件选择对话框
-    def choose_file(self):
-        filename, _ = QFileDialog.getOpenFileName(self, '选择文件', '.', 'Excel files (*.xlsx)')
-        if filename:
-            self.filename = filename
-            self.label_path = QLabel(filename)
-            self.layout.addWidget(self.label_path)
-            self.df = pd.read_excel(self.filename, index_col=0, header=[0, 1])
-            self.ax.clear()
-            self.ax.plot(self.df)
-            self.canvas.draw()
+    def extract_feature(self):
+        file_paths = [self.file_path1.text(), self.file_path2.text(), self.file_path3.text()]
+        feature_extractor = FeatureExtractor(file_paths[self.file_combo_box.currentIndex()])
+        mean_values = feature_extractor.mean()
+        print(mean_values)
 
-    # 提取均值
-    def extract_mean(self):
-        if hasattr(self, 'df'):
-            means = self.df.mean()
-            self.ax.clear()
-            self.ax.plot(means)
-            self.canvas.draw()
-        # 提取最大值
-    def extract_max(self):
-        if hasattr(self, 'df'):
-            max = data_X1.nlargest(1).mean()
-            self.ax.clear()
-            self.ax.plot(max)
-            self.canvas.draw()
-    # 提取标准差
-    def extract_std(self):
-        if hasattr(self, 'df'):
-            stds = self.df.std()
-            self.ax.clear()
-            self.ax.plot(stds)
-            self.canvas.draw()
-    # 提取最小值
-    def extract_min(self):
-        if hasattr(self, 'df'):
-            min = data_X1.nsmallest(1).mean()
-            self.ax.clear()
-            self.ax.plot(min)
-            self.canvas.draw()
-    # 提取峰峰值
-    def extract_max_min(self):
-        if hasattr(self, 'df'):
-            max_min = max - min
-            self.ax.clear()
-            self.ax.plot(max_min)
-            self.canvas.draw()
-    # 提取绝对均值
-    def extract_absolute_mean_value(self):
-        if hasattr(self, 'df'):
-            absolute_mean_value = np.sum(np.fabs(data_X1)) / size_X1
-            self.ax.clear()
-            self.ax.plot(absolute_mean_value)
-            self.canvas.draw()
-    # 提取标准差
-    def extract_standard_deviation(self):
-        if hasattr(self, 'df'):
-            standard_deviation = np.sqrt(np.sum(np.square(data_X1 - mean_value)) / size_X1)
-            self.ax.clear()
-            self.ax.plot(standard_deviation)
-            self.canvas.draw()
-    # 提取均方根值
-    def extract_root_mean_score(self):
-        if hasattr(self, 'df'):
-            root_mean_score = np.sqrt(np.sum(np.square(data_X1)) / size_X1)
-            self.ax.clear()
-            self.ax.plot(root_mean_score)
-            self.canvas.draw()
-    # 提取方根幅值
-    def extract_Root_amplitude(self):
-        if hasattr(self, 'df'):
-            Root_amplitude = np.square(np.sum(np.sqrt(np.fabs(data_X1))) / size_X1)
-            self.ax.clear()
-            self.ax.plot(Root_amplitude)
-            self.canvas.draw()
-    # 提取偏态指标
-    def extract_skewness_value(self):
-        if hasattr(self, 'df'):
-            skewness_value = np.sum(np.power((data_X1 - mean_value) / standard_deviation, 3)) / size_X1
-            self.ax.clear()
-            self.ax.plot(skewness_value)
-            self.canvas.draw()
-    # 提取峭度指标
-    def extract_Kurtosis_value(self):
-        if hasattr(self, 'df'):
-            Kurtosis_value = np.sum(np.power((data_X1)/standard_deviation, 4))/size_X1
-            self.ax.clear()
-            self.ax.plot(Kurtosis_value)
-            self.canvas.draw()
-    # 提取波形因子
-    def extract_shape_factor(self):
-        if hasattr(self, 'df'):
-            shape_factor = root_mean_score / absolute_mean_value
-            self.ax.clear()
-            self.ax.plot(shape_factor)
-            self.canvas.draw()
-    # 提取峰值因子
-    def extract_crest_factor(self):
-        if hasattr(self, 'df'):
-            crest_factor = max / root_mean_score
-            self.ax.clear()
-            self.ax.plot(crest_factor)
-            self.canvas.draw()
-    # 提取脉冲因子
-    def extract_pulse_factor(self):
-        if hasattr(self, 'df'):
-            pulse_factor = max / absolute_mean_value
-            self.ax.clear()
-            self.ax.plot(pulse_factor)
-            self.canvas.draw()
-    # 提取裕度因子
-    def extract_clearance_factor(self):
-        if hasattr(self, 'df'):
-            clearance_factor = max / Root_amplitude
-            self.ax.clear()
-            self.ax.plot(clearance_factor)
-            self.canvas.draw()
-
-# 启动应用程序
 if __name__ == '__main__':
     app = QApplication([])
     window = MainWindow()
